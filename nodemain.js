@@ -1,28 +1,29 @@
-var sys = require("sys"), ws = require('node-websocket-server');
+var ws = require('node-websocket-server');
 
 var server = ws.createServer();
 
 var combatserver=require('./combatserver');
 var cserver=new combatserver.CombatServer('node');
 
-
-
+var port=8000;
 
 server.addListener("connection", function(conn){
-  console.log(conn._id + ": new connection");
   conn.addListener("readyStateChange", function(readyState){
     console.log("stateChanged: "+readyState);
   });
  
   conn.addListener("open", function(){
-    console.log(this._id + ": onOpen");
+    //console.log(this._id + ": onOpen");
 
   });
  
   conn.addListener("close", function(){
     var c = this;
-    console.log(this._id + ": onClose");
-    if(this.player)this.player.disconnect();
+   // console.log(this._id + ": onClose");
+    if(this.player){
+      cserver.log('CLOSE: '+this.player.uid);
+      this.player.disconnect();
+    }
 
   });
  
@@ -31,5 +32,5 @@ server.addListener("connection", function(conn){
     var retv=cserver.handle(message, conn);   
   });
 });
-server.listen(8000);
-console.log('started');
+server.listen(port);
+cserver.log('SERVER STARTED, LISTENING '+port);

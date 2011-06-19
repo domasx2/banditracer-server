@@ -1,6 +1,7 @@
 var world=require('./client/world');
 var settings=require('./settings');
 var game_settings=require('./client/settings');
+var car_descriptions=require('./client/car_descriptions');
 var TIMER_LASTCALL = null;
 var CALLBACKS = {};
 var CALLBACKS_LASTCALL = {};
@@ -79,11 +80,11 @@ var Game=exports.Game=function(id, track, leader, server){
     server.log('START GAME '+id);
     
     this.updatePlayer=function(player, payload){
-        for(var action in payload.actions){
-            player.car[action]=payload.actions[action];
-        }
+        player.car.steer=payload.actions.steer;
+        player.car.accelerate=payload.actions.accelerate;
+        player.car.fire_weapon1=payload.actions.fire_weapon1;
+        player.car.fire_weapon2=payload.actions.fire_weapon2;
         player.last_event_no=payload.eventno;
-        player.upds_stacked=0;
     };
     
     this.update=function(msDuration){
@@ -280,11 +281,11 @@ var Game=exports.Game=function(id, track, leader, server){
         for(var uid in this.players){
             player=this.players[uid];
             startpos=this.world.start_positions[i];
-            car=this.world.event('create', {'type':'car', 'obj_name':player.car_description.type, 'pars':{'position':[startpos.x+1, startpos.y+2],
+            car=this.world.event('create', {'type':'car', 'obj_name':player.car, 'pars':{'position':[startpos.x+1, startpos.y+2],
                                                                                                         'angle':startpos.angle,
                                                                                                         'alias':player.alias,
-                                                                                                        'weapon1':player.car_description.weapon1,
-                                                                                                        'weapon2':player.car_description.weapon2}});
+                                                                                                        'weapon1':car_descriptions[player.car].main_weapon,
+                                                                                                        'weapon2':'MineLauncher'}});
             
             player.car=car;
             car.player=player;
@@ -318,7 +319,7 @@ var Lobby=exports.Lobby=function(id, title, track, leader, server){
         var retv=[];
         for(var uid in this.players){
             retv[retv.length]={'player':this.players[uid].alias+(uid===this.leader.uid ? ' (leader)' : ''),
-                               'car':'Unknown',
+                               'car':car_descriptions[this.players[uid].car].name,
                                'id':this.players[uid].id};
         }
         return retv;
@@ -425,8 +426,7 @@ var Player=exports.Player=function(uid, id, alias, server){
     this.socket=null;
     this.game=null;
     this.server=server;
-    this.car_description={'type':'Racer', 'weapon1':'Machinegun', 'weapon2':'MineLauncher'};
-    this.car=null;
+    this.car='Racer';
     this.last_event_no=0;
     this.upds_stacked=0;
     this.ready=false;
@@ -442,7 +442,6 @@ var Player=exports.Player=function(uid, id, alias, server){
                
              //  var n1=(new Date()).getTime();
                this.socket.send ? this.socket.send(message) : this.socket.write(message);
-             //  this.server.log('SENT '+message+'\n @ '+((new Date()).getTime()-n1));
             }catch(e){
                this.server.log('SEND FAIL:'+this.uid+' ERR:'+e);
                this.disconnect();
@@ -467,7 +466,7 @@ var Player=exports.Player=function(uid, id, alias, server){
          this.idle+=msDuration;
          if(this.idle>=settings.PLAYER_TIMEOUT){
             this.server.log('TIMEOUT '+this.uid);
-            this.send(this.server.criticalError('Timeout!'));
+            if(this.game)this.send(this.server.criticalError('Timeout!'));
             this.disconnect();
          }
     };
@@ -794,6 +793,20 @@ exports.CombatServer=function(type){
         response.payload.uid=player.uid;
         response.cmd='HELLO';
         return response;
+    };
+    
+        /*
+    SELECT_CAR
+    */
+    this.handle_SELECT_CAR=function(message, response){
+        if(!(car_descriptions.hasOwnProperty(message.payload.car))){
+            return this.criticalError('Unknown car.');
+        }
+        message.player.car=message.payload.car;
+        if(message.player.game && (message.player.game.type=='lobby')){
+            message.player.game.pushUpdates();
+        }
+        return null;
     };
     
     /*PING */

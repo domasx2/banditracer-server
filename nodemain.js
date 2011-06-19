@@ -1,11 +1,11 @@
 var ws = require('node-websocket-server');
-
+var settings=require('./settings');
 var server = ws.createServer();
 
 var combatserver=require('./combatserver');
 var cserver=new combatserver.CombatServer('node');
 
-var port=8000;
+var port=settings.PORT;
 
 server.addListener("connection", function(conn){
   conn.addListener("readyStateChange", function(readyState){

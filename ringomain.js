@@ -1,6 +1,9 @@
 var {Application} = require("stick");
 
 export("app", "init");
+var settings = require('./settings');
+require.paths.push(settings.GAMEJS_DIRECTORY);
+
 var combatserver=require('./combatserver');
 var app = Application();
 app.configure("notfound", "error", "static", "params", "mount");
@@ -10,8 +13,7 @@ app.mount("/", require("./actions"));
 var server;
 var cserver;
 var start = function() {
-   
-   
+
    // see https://gist.github.com/555596
    var context = server.getDefaultContext();
    cserver=new combatserver.CombatServer('ringo');
@@ -23,15 +25,17 @@ var start = function() {
       socket.onopen=function(){
          print('open');
       };
-      
+
       socket.onmessage = function(m) {
         // print("MESSAGE", m);
          var retv=cserver.handle(m, socket);
       };
 
       socket.onclose = function() {
-         if(this.player)this.player.disconnect();
-         print("CLOSE");
+         if(this.player){
+            this.player.disconnect();
+            cserver.log('CLOSE: '+this.player.uid);
+         }
       };
    });
    return;

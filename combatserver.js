@@ -1,7 +1,7 @@
-var world=require('./client/world');
+var world=require('./client/javascript/world');
 var settings=require('./settings');
-var game_settings=require('./client/settings');
-var car_descriptions=require('./client/car_descriptions');
+var game_settings=require('./client/javascript/settings');
+var car_descriptions=require('./client/javascript/car_descriptions');
 var TIMER_LASTCALL = null;
 var CALLBACKS = {};
 var CALLBACKS_LASTCALL = {};
@@ -78,7 +78,7 @@ var Game=exports.Game=function(id, track, leader, server){
     this.max_laps=3;
     this.finishers=[];
     server.log('START GAME '+id);
-    
+
     this.updatePlayer=function(player, payload){
         player.car.steer=payload.actions.steer;
         player.car.accelerate=payload.actions.accelerate;
@@ -86,10 +86,10 @@ var Game=exports.Game=function(id, track, leader, server){
         player.car.fire_weapon2=payload.actions.fire_weapon2;
         player.last_event_no=payload.eventno;
     };
-    
+
     this.update=function(msDuration){
         var uid, player;
-        
+
         //wait to be started
         if(this.status===GAME_STATUS_WAITING) return;
         //no players left - destroy
@@ -98,18 +98,18 @@ var Game=exports.Game=function(id, track, leader, server){
             this.destroy();
             return;
         }
-        
+
         this.time+=msDuration;
-        
-        
+
+
         //timeout game?
         if(this.time>settings.GAME_TIMEOUT){
             this.server.log('GAME TIMEOUT '+this.id);
             this.destroy();
         }
-        
+
         var update_start=(new Date()).getTime();
-        
+
         //start the game when all players report ready OR 6 seconds have passed
         var ready=true;
         for(uid in this.players){
@@ -120,7 +120,7 @@ var Game=exports.Game=function(id, track, leader, server){
         }
         if(ready){
             this.status=GAME_STATUS_RUNNING;
-            
+
         //if timeout time has passed, kick unready players and start anyway
         }else if(this.time>this.force_start_after){
             for(uid in this.players){
@@ -128,13 +128,13 @@ var Game=exports.Game=function(id, track, leader, server){
             }
             this.status=GAME_STATUS_RUNNING;
         };
-        
+
         if(this.status===GAME_STATUS_RUNNING){
             if(this.time_to_start> -1000){
                 this.time_to_start-=msDuration;
                 if(this.time_to_start<0)this.started=true;
             }
-            
+
             if(this.started){
                 this.world.b2world.Step(msDuration/1000, 10, 8);
                 this.world.update(msDuration);
@@ -151,7 +151,7 @@ var Game=exports.Game=function(id, track, leader, server){
             }
             if(!player.finished)finished=false;
         }
-        
+
         if(finished){
             var table=[];
             for(var i=0;i<this.finishers.length;i++){
@@ -161,26 +161,26 @@ var Game=exports.Game=function(id, track, leader, server){
                            'kills':String(this.finishers[i].car.kills),
                            'deaths':String(this.finishers[i].car.deaths)});
             }
-            
+
             this.pushResponse(this.server.newResponse('GAME_OVER', {'table':table}));
             this.server.log('GAME FINISHED '+this.id);
             this.destroy('', true);
-            
+
         }
         this.pushUpdates(update_start);
     };
-    
+
    this.stringifyResponse=function(events, states, t, carid, tts){
       return ['{"cmd":"GAME_UPDATE", "payload":{"carid":'+carid, ',"tts":'+tts, ',"t":'+t, ',"states":', states, ',"events":[', events.join(','), ']}}'].join('');
    };
-    
+
     this.pushUpdates=function(update_start){
       try{
 
         var player, obj, objid, state;
         var states={};
         //gen object states
-        
+
         for(objid in this.world.object_by_id){
             var obj=this.world.object_by_id[objid];
             state=obj.getState();
@@ -204,7 +204,7 @@ var Game=exports.Game=function(id, track, leader, server){
                 player.last_event_no=eno-1;
                 player.send(this.stringifyResponse(events, states, this.time+(new Date()).getTime()-update_start, player.car.id,this.time_to_start));
 
-                
+
                 /*player.send(server.newResponse('GAME_UPDATE', {'states':events,
                                                                 't':this.time+(new Date()).getTime()-update_start,
                                                                'events':events,
@@ -216,7 +216,7 @@ var Game=exports.Game=function(id, track, leader, server){
 
         }catch(e){this.server.log(e);}
     };
-    
+
     this.addPlayer=function(player){
         this.players[player.uid]=player;
         player.game=this;
@@ -225,22 +225,22 @@ var Game=exports.Game=function(id, track, leader, server){
         player.finished=false;
         this.server.log('GAME PLAYER JOINED '+player.uid);
     };
-    
+
     this.pushResponse=function(response){
         for(var uid in this.players){
             this.players[uid].send(response);
         }
     };
-    
+
     this.countPlayers=function(){
         var size = 0, id;
         for (var id in this.players) {
             if (this.players.hasOwnProperty(id)) size++;
         }
-        return size;  
-        
+        return size;
+
     };
-    
+
     this.destroy=function(text, silent){
         for(uid in this.players){
             this.removePlayer(this.players[uid], text, silent);
@@ -248,14 +248,14 @@ var Game=exports.Game=function(id, track, leader, server){
         this.server.log('DESTROY GAME '+this.id);
         delete this.server.games[this.id];
     };
-    
+
     this.removePlayer=function(player, text, silent){
-            
-        delete this.players[player.uid];    
+
+        delete this.players[player.uid];
         player.game=null;
         this.server.log('GAME '+this.id+' PLAYER LEFT '+player.uid);
         //remove self from server if there are no more players
-       
+
         //if player was leader, assign new leader
         if(this.leader===player){
             this.leader=null;
@@ -271,10 +271,10 @@ var Game=exports.Game=function(id, track, leader, server){
             player.send(resp);
         }
     };
-    
-    
+
+
     this.start=function(){
-        
+
         var player, car, startpos;
         this.world=world.buildWorld(this.level, world.MODE_SERVER);
         var i=1;
@@ -286,7 +286,7 @@ var Game=exports.Game=function(id, track, leader, server){
                                                                                                         'alias':player.alias,
                                                                                                         'weapon1':car_descriptions[player.car].main_weapon,
                                                                                                         'weapon2':'MineLauncher'}});
-            
+
             player.car=car;
             car.player=player;
             i++;
@@ -298,7 +298,7 @@ var Game=exports.Game=function(id, track, leader, server){
 
 var Lobby=exports.Lobby=function(id, title, track, leader, server){
     /*
-     
+
     */
     this.id=id;
     this.type='lobby';
@@ -312,9 +312,9 @@ var Lobby=exports.Lobby=function(id, title, track, leader, server){
     this.server=server;
     this.max_players=6;
     leader.game=this;
-    
+
     this.server.log('START LOBBY '+this.id+' TRACK: '+this.track+' LEADER: '+this.leader.uid);
-    
+
     this.getPlayerInfo=function(){
         var retv=[];
         for(var uid in this.players){
@@ -324,47 +324,47 @@ var Lobby=exports.Lobby=function(id, title, track, leader, server){
         }
         return retv;
     };
-    
+
     this.countPlayers=function(){
         var size = 0, id;
         for (var id in this.players) {
             if (this.players.hasOwnProperty(id)) size++;
         }
-        return size;  
-        
+        return size;
+
     };
-    
-    
+
+
     this.update=function(msDuration){
-        
+
     };
-    
+
     this.getLobbyInfoResponse=function(player){
         var payload={'players':this.getPlayerInfo(),
                      'track':this.track,
                      'is_leader':this.leader.uid==player.uid ? true : false};
         return this.server.newResponse('LOBBY_INFO', payload);
     };
-    
+
     this.pushUpdates=function(){
-        
+
         for(var uid in this.players){
             this.server.log('PUSH UPDATES '+uid);
             this.players[uid].send(this.getLobbyInfoResponse(this.players[uid]));
         }
     };
-    
+
     this.kick=function(player){
          this.server.log('PLAYER '+player.uid+' KICKED FROM LOBBY '+this.id);
           this.removePlayer(player, 'You have been kicked!');
     };
-    
+
     this.removePlayer=function(player, text){
-            
-        delete this.players[player.uid];    
-        player.game=null;        
+
+        delete this.players[player.uid];
+        player.game=null;
         //remove self from server if there are no more players
-       
+
         //if player was leader, assign new leader
         if(this.leader===player){
             for(uid in this.players){
@@ -373,32 +373,32 @@ var Lobby=exports.Lobby=function(id, title, track, leader, server){
             }
         }
         this.pushUpdates();
-        
+
         var resp=this.server.newResponse();
         resp.payload.text=text ? text : '';
         resp.cmd='LEFT_LOBBY';
         player.send(resp);
         this.server.log('PLAYER '+player.uid+' LEFT LOBBY '+this.id);
-        
+
         if(this.countPlayers()===0){
             this.destroy();
             this.server.log('DESTROY LOBBY'+this.id)
-            return;   
+            return;
         }
     };
-    
+
     this.addPlayer=function(player){
         if(this.countPlayers()>=this.max_players){
             player.send(this.server.error('Lobby full.'));
         }else{
             this.players[player.uid]=player;
-            player.game=this;            
+            player.game=this;
             player.send(this.server.newResponse('JOIN_LOBBY_OK', {'lobby_id':this.id}))
             this.pushUpdates();
             this.server.log('PLAYER '+player.uid+' JOINED LOBBY '+this.id);
         }
     };
-    
+
     this.destroy=function(text){
         for(uid in this.players){
             this.players[uid].leave(text);
@@ -406,14 +406,14 @@ var Lobby=exports.Lobby=function(id, title, track, leader, server){
         delete this.server.lobbies[this.id];
         this.server.log('DESTROY LOBBY '+this.id);
     };
-    
+
     this.getLobbyListInfo=function(){
-        
+
         return    {'title':this.title,
                   'id':this.id,
                   'track':this.track,
                   'playercount':this.countPlayers()+'/'+this.max_players};
- 
+
     };
 };
 
@@ -432,14 +432,14 @@ var Player=exports.Player=function(uid, id, alias, server){
     this.ready=false;
     this.finished=false;
     this.idle=0; //seconds idle
-    
+
     this.send=function(message){
         if(this.state!='disconnected'){
             if(!(typeof(message)=='string')){
                message=JSON.stringify(message);
             }
             try{
-               
+
              //  var n1=(new Date()).getTime();
                this.socket.send ? this.socket.send(message) : this.socket.write(message);
             }catch(e){
@@ -448,7 +448,7 @@ var Player=exports.Player=function(uid, id, alias, server){
             }
         }
     };
-    
+
     this.disconnect=function(){
         //disconnect: leave any game/lobby, remove self from server
         this.server.log("PLAYER DISCONNECTED: "+this.uid);
@@ -461,7 +461,7 @@ var Player=exports.Player=function(uid, id, alias, server){
             }catch(e){this.server.log('DCER:'+e);}
         }
     };
-    
+
     this.update=function(msDuration){
          this.idle+=msDuration;
          if(this.idle>=settings.PLAYER_TIMEOUT){
@@ -470,11 +470,11 @@ var Player=exports.Player=function(uid, id, alias, server){
             this.disconnect();
          }
     };
-    
+
     this.touch=function(){
        this.idle=0;
     };
-    
+
     this.leave=function(text){
         if(this.game)this.game.removePlayer(this, text);
     };
@@ -490,9 +490,9 @@ exports.CombatServer=function(type){
     this.lobbies={};
     this.type=type;
     this.levels={};
-    
+
     this.tickid=1;
-    
+
     this.tick=function(msDuration){
         for(var lobbyid in this.lobbies){
             this.lobbies[lobbyid].update(msDuration);
@@ -504,7 +504,7 @@ exports.CombatServer=function(type){
             this.players[uid].update(msDuration);
         }
     };
-    
+
     this.startTimer=function(){
         STARTTIME = Date.now();
         if(type=='ringo'){
@@ -513,9 +513,9 @@ exports.CombatServer=function(type){
             setInterval(perInterval, 10);
         }
         fpsCallback(this.tick, this, settings.UPDATES_PER_SECOND);
-        
+
     };
-    
+
     this.log=function(msg){
         if(this.type=='ringo'){
             print(msg);
@@ -523,10 +523,10 @@ exports.CombatServer=function(type){
             console.log(((new Date())+'').substr(0, 25)+msg);
         }
     }
-    
+
     this.loadLevels=function(){
         if(this.type=='ringo'){
-            
+
             var fnames=fs.list(settings.LEVEL_DIRECTORY);
             var levelname;
             var fname;
@@ -551,26 +551,26 @@ exports.CombatServer=function(type){
                 this.levels[levelname]=JSON.parse(content);
             }
         }
-        
+
     };
 
-    
 
-    
+
+
     this.getPlayerByID=function(id){
         for(var uid in this.players){
             if(this.players[uid].id==id) return this.players[uid];
         }
         return null;
     };
-    
+
     this.newResponse=function(cmd, payload){
         var resp= {'payload':{}};
         if(cmd)resp.cmd=cmd;
         if(payload)resp.payload=payload;
         return resp;
     };
-    
+
     this.unsecured={'HI':true,
                     'PING':true}; //requests servicable without being logged in
 
@@ -578,7 +578,7 @@ exports.CombatServer=function(type){
         message=JSON.parse(message);
         message.socket=socket;
         var cmd=message.cmd;
-        
+
         //assign player if possible
         if(message.uid){
             message.player=this.players[message.uid];
@@ -586,14 +586,14 @@ exports.CombatServer=function(type){
                message.player.touch();
             }
         }
-        
+
         //set up response object
         var response=this.newResponse();
-        
+
         if((!message.player)&&(!this.unsecured[cmd])){
             //if player is not registered and needs to be, alert
             response=this.criticalError('You must be registered.', this.newResponse());
-            
+
         }else{
             //handle
             if(this['handle_'+cmd]){
@@ -612,50 +612,50 @@ exports.CombatServer=function(type){
         }
         return null;
     };
-    
+
     this.error=function(text){
         //error: alert the player
         this.log('ERROR: '+text);
         return this.newResponse('ERR', {'text':text});
 
     };
-    
+
     this.criticalError=function(text){
         //critical error: alert the player, kick from lobby/game
         this.log('CRITICAL ERROR: '+text);
         return this.newResponse('CRITICAL_ERR', {'text':text});
     };
-    
+
     /*
      LIST LOBBIES
-     
+
     */
     this.handle_LIST_LOBBIES=function(message, response){
         var lobbyid;
         var info=[];
         for(lobbyid in this.lobbies){
-            info[info.length]= this.lobbies[lobbyid].getLobbyListInfo(); 
+            info[info.length]= this.lobbies[lobbyid].getLobbyListInfo();
         }
         response.payload.lobbies=info;
         response.cmd='LOBBY_LIST';
         return response;
     };
-    
+
     /*
     GET LOBBY INFO
-    */    
+    */
     this.handle_GET_LOBBY_INFO=function(message, response){
         var lobby=message.player.game;
         if((!lobby) || (!(lobby.type=='lobby'))){
             return this.criticalError('Failed to get lobby info: you are not in a lobby!', response);
-        }    
+        }
         var resp= lobby.getLobbyInfoResponse(message.player);
         return resp;
-        
+
     };
-    
-    
-    
+
+
+
     /*
      CREATE LOBBY
     */
@@ -666,11 +666,11 @@ exports.CombatServer=function(type){
         response.cmd='CREATE_LOBBY_OK';
         return response;
     };
-    
+
     /*
     JOIN LOBBY
     */
-    
+
     this.handle_JOIN_LOBBY=function(message, response){
         if(!this.lobbies[message.payload.lobby_id]){
             return this.error('Lobby not found.');
@@ -679,10 +679,10 @@ exports.CombatServer=function(type){
         lobby.addPlayer(message.player);
         return null;
     };
-    
-    
+
+
     /*
-    KICK 
+    KICK
     */
     this.handle_KICK=function(message, response){
         if(!this.lobbies[message.payload.lobby_id]){
@@ -699,13 +699,13 @@ exports.CombatServer=function(type){
         if(kickee===message.player){
             return this.error("You kicked yourself, oh so funny!.");
         }
-        
+
         lobby.kick(kickee);
         return null;
     };
-    
+
     /*
-    LEAVE_LOBBY   
+    LEAVE_LOBBY
     */
     this.handle_LEAVE_LOBBY=function(message, response){
         if(!(message.player.game&& (message.player.game.type=='lobby'))){
@@ -714,12 +714,12 @@ exports.CombatServer=function(type){
         message.player.leave();
         return null;
     };
-    
+
     /*
      START GAME
-     
+
     */
-    
+
     this.handle_START_GAME=function(message, response){
         if(!(message.player.game&& (message.player.game.type=='lobby'))){
             return this.criticalError('You are not in a lobby.');
@@ -731,7 +731,7 @@ exports.CombatServer=function(type){
         if(!(this.levels[lobby.track])){
             return this.error('Unknown track.');
         }
-        
+
         var game=new Game(this.next_game_id++, lobby.track, lobby.leader, this);
         this.games[game.id]=game;
         for(var uid in lobby.players){
@@ -741,7 +741,7 @@ exports.CombatServer=function(type){
         lobby.leader=null;
         lobby.destroy();
         game.start();
-        
+
         return null;
     };
 
@@ -753,7 +753,7 @@ exports.CombatServer=function(type){
             message.player.ready=true;
         }
     };
-    
+
     /* PLAYER SENDS HIS UPDATES */
     this.handle_GAME_UPDATE=function(message, response){
         if((!message.player.game)||(!(message.player.game.type=='game'))){
@@ -763,7 +763,7 @@ exports.CombatServer=function(type){
         message.player.game.updatePlayer(message.player, message.payload);
         return null;
     };
-    
+
      /*
     HI
     register player
@@ -778,23 +778,23 @@ exports.CombatServer=function(type){
         if(!message.payload.alias){
            return this.error('Missing alias');
         }
-        
+
         if(message.player){
             var player=message.player;
         }else{
             var uid=genPlayerUID();
-            while(this.players[uid]) uid=genPlayerUID(); 
+            while(this.players[uid]) uid=genPlayerUID();
             var player=new Player(uid, this.next_player_id++, message.payload.alias, this);
             this.players[player.uid]=player;
         }
         player.socket=message.socket;
         message.socket=player;
-        
+
         response.payload.uid=player.uid;
         response.cmd='HELLO';
         return response;
     };
-    
+
         /*
     SELECT_CAR
     */
@@ -808,13 +808,13 @@ exports.CombatServer=function(type){
         }
         return null;
     };
-    
+
     /*PING */
     this.handle_PING=function(message, response){
         response.cmd='PONG';
         return response;
     };
-    
+
     this.loadLevels();
     this.startTimer();
 

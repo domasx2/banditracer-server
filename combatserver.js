@@ -81,10 +81,10 @@ var Game=exports.Game=function(id, track, leader, server){
     server.log('START GAME '+id);
     
     this.updatePlayer=function(player, payload){
-        player.car.steer=payload.actions.steer;
-        player.car.accelerate=payload.actions.accelerate;
-        player.car.fire_weapon1=payload.actions.fire_weapon1;
-        player.car.fire_weapon2=payload.actions.fire_weapon2;
+        player.car_obj.steer=payload.actions.steer;
+        player.car_obj.accelerate=payload.actions.accelerate;
+        player.car_obj.fire_weapon1=payload.actions.fire_weapon1;
+        player.car_obj.fire_weapon2=payload.actions.fire_weapon2;
         player.last_event_no=payload.eventno;
     };
     
@@ -125,7 +125,7 @@ var Game=exports.Game=function(id, track, leader, server){
         //if timeout time has passed, kick unready players and start anyway
         }else if(this.time>this.force_start_after){
             for(uid in this.players){
-                this.removePlayer(this.players[uid], 'Timed out!');
+                this.removePlayer(this.players[uid]);
             }
             this.status=GAME_STATUS_RUNNING;
         };
@@ -144,10 +144,10 @@ var Game=exports.Game=function(id, track, leader, server){
         var finished=true;
         for(uid in this.players){
             player=this.players[uid];
-            if(player.car.lap>this.max_laps && (!player.finished)){
+            if(player.car_obj.lap>this.max_laps && (!player.finished)){
                 player.finished=true;
-                player.car.teleport([0, 0]);
-                player.car.active=false;
+                player.car_obj.teleport([0, 0]);
+                player.car_obj.active=false;
                 this.finishers.push(player);
             }
             if(!player.finished)finished=false;
@@ -159,8 +159,8 @@ var Game=exports.Game=function(id, track, leader, server){
                 table.push({'place':String(i+1),
                            'id':this.finishers[i].id,
                            'player':this.finishers[i].alias,
-                           'kills':String(this.finishers[i].car.kills),
-                           'deaths':String(this.finishers[i].car.deaths)});
+                           'kills':String(this.finishers[i].car_obj.kills),
+                           'deaths':String(this.finishers[i].car_obj.deaths)});
             }
             
             this.pushResponse(this.server.newResponse('GAME_OVER', {'table':table}));
@@ -204,7 +204,7 @@ var Game=exports.Game=function(id, track, leader, server){
                     eno++;
                 }
                 player.last_event_no=eno-1;
-                player.send(this.stringifyResponse(events, states, this.time+(new Date()).getTime()-update_start, player.car.id,this.time_to_start));
+                player.send(this.stringifyResponse(events, states, this.time+(new Date()).getTime()-update_start, player.car_obj.id,this.time_to_start));
 
                 
                 /*player.send(server.newResponse('GAME_UPDATE', {'states':events,
@@ -289,7 +289,7 @@ var Game=exports.Game=function(id, track, leader, server){
                                                                                                         'weapon1':car_descriptions[player.car].main_weapon,
                                                                                                         'weapon2':'MineLauncher'}});
             
-            player.car=car;
+            player.car_obj=car;
             car.player=player;
             i++;
         }
@@ -321,7 +321,7 @@ var Lobby=exports.Lobby=function(id, title, track, leader, server){
         var retv=[];
         for(var uid in this.players){
             retv[retv.length]={'player':this.players[uid].alias+(uid===this.leader.uid ? ' (leader)' : ''),
-                               'car':car_descriptions[this.players[uid].car].name,
+                               'car':this.players[uid].car ? car_descriptions[this.players[uid].car].name : 'Unknown',
                                'id':this.players[uid].id};
         }
         return retv;
@@ -783,6 +783,7 @@ exports.CombatServer=function(type){
         
         if(message.player){
             var player=message.player;
+            player.alias=message.payload.alias;
         }else{
             var uid=genPlayerUID();
             while(this.players[uid]) uid=genPlayerUID(); 

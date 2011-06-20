@@ -77,6 +77,7 @@ var Game=exports.Game=function(id, track, leader, server){
     this.world=null;
     this.max_laps=3;
     this.finishers=[];
+    this.send_update_flip=true; //sending upates every second frame, flipping this to track.
     server.log('START GAME '+id);
 
     this.updatePlayer=function(player, payload){
@@ -167,7 +168,8 @@ var Game=exports.Game=function(id, track, leader, server){
             this.destroy('', true);
 
         }
-        this.pushUpdates(update_start);
+        if(this.send_update_flip) this.pushUpdates(update_start);     
+        this.send_update_flip=this.send_update_flip ? false : true;
     };
 
    this.stringifyResponse=function(events, states, t, carid, tts){

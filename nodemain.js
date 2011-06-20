@@ -31,6 +31,10 @@ server.addListener("connection", function(conn){
    // console.log(this._id + ": "+message);
     var retv=cserver.handle(message, conn);   
   });
+  
+  conn.addListener('error', function (exc) {
+    cserver.log("ignoring exception: " + exc);
+  });
 });
 server.listen(port);
 cserver.log('SERVER STARTED, LISTENING '+port);

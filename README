@@ -1,0 +1,7 @@
+Can be run on Node.js server, main file is nodemain.js
+Node.js has to have these modules installed:
+http://github.com/GameJs/gamejs
+http://github.com/miksago/node-websocket-server
+
+Requires a symlink called 'client' in the main directory banditracer client main, available at http://github.com/domasx2/banditracer-client.
+

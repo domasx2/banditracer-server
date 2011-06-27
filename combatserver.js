@@ -536,7 +536,6 @@ exports.CombatServer=function(type){
                 fname=fnames[i];
                 levelname=fname.split('.')[0];
                 content=fs.read(fs.join(settings.LEVEL_DIRECTORY, fname), 'r').trim();
-                content=content.slice(13,content.length-1);
                 this.levels[levelname]=JSON.parse(content);
             }
         }else if(this.type=='node'){
@@ -548,7 +547,6 @@ exports.CombatServer=function(type){
                 fname=fnames[i];
                 levelname=fname.split('.')[0];
                 content=fs.readFileSync(settings.LEVEL_DIRECTORY+'/'+fname, 'utf-8');
-                content=content.slice(13,content.length-3);
                 this.levels[levelname]=JSON.parse(content);
             }
         }

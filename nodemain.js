@@ -11,12 +11,12 @@ server.addListener("connection", function(conn){
   conn.addListener("readyStateChange", function(readyState){
     console.log("stateChanged: "+readyState);
   });
- 
+
   conn.addListener("open", function(){
     //console.log(this._id + ": onOpen");
 
   });
- 
+
   conn.addListener("close", function(){
     var c = this;
    // console.log(this._id + ": onClose");
@@ -26,12 +26,12 @@ server.addListener("connection", function(conn){
     }
 
   });
- 
+
   conn.addListener("message", function(message){
    // console.log(this._id + ": "+message);
-    var retv=cserver.handle(message, conn);   
+    var retv=cserver.handle(message, conn);
   });
-  
+
   conn.addListener('error', function (exc) {
     cserver.log("ignoring exception: " + exc);
   });

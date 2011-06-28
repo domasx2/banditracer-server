@@ -1,7 +1,32 @@
+RingoJs
+===========
+
+  * Install RingoJs <http://ringojs.org/getting_started>
+  * Install packages:
+
+    $ ringo-admin install domasx2/banditracer-client
+    $ ringo-admin install domasx2/banditracer-server
+    $ ringo-admin install oberhamsi/gamejs
+    $ ringo-admin install hns/stick
+
+  * Start http & websocket server:
+
+    $ ringo -e "require('banditracer-server').startUp()"
+
+   * access the Game server
+
+    firefox http://127.0.0.1:8080/
+
+If you want other's to be able to join your game, they must access the game
+with <Your IP:8080> and you must appropriatly set <ws://IP:8787>
+in banditracer-client's settings.js!
+
+Node.js
+===========
 Can be run on Node.js server, main file is nodemain.js
 Node.js has to have these modules installed:
 http://github.com/GameJs/gamejs
 http://github.com/miksago/node-websocket-server
 
-Requires a symlink called 'client' in the main directory banditracer client main, available at http://github.com/domasx2/banditracer-client.
-
+Requires a symlink called 'client' in the main directory banditracer client main,
+available at http://github.com/domasx2/banditracer-client.

@@ -17,18 +17,18 @@ server.addListener("/websocket", function(conn){
   conn.addListener("readyStateChange", function(readyState){
     log("stateChanged: "+readyState);
   });
- 
+
   conn.addListener("open", function(){
     log(conn._id + ": onOpen");
 
   });
- 
+
   conn.addListener("close", function(){
     var c = this;
     log(c._id + ": onClose");
 
   });
- 
+
   conn.addListener("message", function(message){
     log(conn._id + ": "+message);
   });

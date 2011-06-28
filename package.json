@@ -1,0 +1,8 @@
+{
+    "name": "banditracer-server",
+    "version": "0.1.0",
+    "description": "Banditracer, dedicated server component of the game",
+    "keywords": ["game", "racing", "websocket"],
+    "author": ["Domas Lapinskas <domasx2@gmail.com>"],
+    "main": "./ringomain.js"
+}

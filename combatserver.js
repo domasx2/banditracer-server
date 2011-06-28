@@ -144,7 +144,8 @@ var Game=exports.Game=function(id, track, leader, server){
         var finished=true;
         for(uid in this.players){
             player=this.players[uid];
-            if(player.car_obj.lap>this.max_laps && (!player.finished)){
+            //push player into finishers table if he finished the final lap OR is the last player not to finish
+            if( (player.car_obj.lap>this.max_laps && (!player.finished))||(this.countPlayers()>1 && ((this.countPlayers()-this.finishers.length)==1))){
                 player.finished=true;
                 player.car_obj.teleport([0, 0]);
                 player.car_obj.active=false;
@@ -172,8 +173,8 @@ var Game=exports.Game=function(id, track, leader, server){
         this.send_update_flip=this.send_update_flip ? false : true;
     };
 
-   this.stringifyResponse=function(events, states, t, carid, tts){
-      return ['{"cmd":"GAME_UPDATE", "payload":{"carid":'+carid, ',"tts":'+tts, ',"t":'+t, ',"states":', states, ',"events":[', events.join(','), ']}}'].join('');
+   this.stringifyResponse=function(events, states, t, carid, tts, st){
+      return ['{"cmd":"GAME_UPDATE", "payload":{"carid":'+carid, ',"tts":'+tts, ',"t":'+t, ',"states":', states,',"st":'+st, ',"events":[', events.join(','), ']}}'].join('');
    };
 
     this.pushUpdates=function(update_start){
@@ -204,13 +205,14 @@ var Game=exports.Game=function(id, track, leader, server){
                     eno++;
                 }
                 player.last_event_no=eno-1;
-                player.send(this.stringifyResponse(events, states, this.time+(new Date()).getTime()-update_start, player.car_obj.id,this.time_to_start));
+                player.send(this.stringifyResponse(events, states, this.time+(new Date()).getTime()-update_start, player.car_obj.id,this.time_to_start, player.finished? 2 : 1));
 
 
-                /*player.send(server.newResponse('GAME_UPDATE', {'states':events,
+              /*  player.send(server.newResponse('GAME_UPDATE', {'states':events,
                                                                 't':this.time+(new Date()).getTime()-update_start,
                                                                'events':events,
                                                                'carid':player.car.id,
+                                                               'st':player.finished? 2 : 1, //1: not finished, 2:finished
                                                                'tts':this.time_to_start}));*/
                 player.upds_stacked++;
            // }
@@ -571,6 +573,7 @@ exports.CombatServer=function(type){
     };
 
     this.unsecured={'HI':true,
+                     'PROD':true,
                     'PING':true}; //requests servicable without being logged in
 
     this.handle=function(message, socket){
@@ -814,6 +817,13 @@ exports.CombatServer=function(type){
         response.cmd='PONG';
         return response;
     };
+    
+    /*PROD
+    needed only to refresh timeout counter on player
+    */
+    this.handle_PROD=function(message, response){
+      return null;
+    }
 
     this.loadLevels();
     this.startTimer();

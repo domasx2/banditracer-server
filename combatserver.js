@@ -1,13 +1,15 @@
-var world=require('./client/javascript/world');
+// in ringo we could simply do:
+// var {world, game_settings, car_descriptions} = require('banditracer-client');
+var world=require('banditracer-client').world;
+var game_settings=require('banditracer-client').settings;
+var car_descriptions=require('banditracer-client').car_descriptions;
+
 var settings=require('./settings');
-var game_settings=require('./client/javascript/settings');
-var car_descriptions=require('./client/javascript/car_descriptions');
 var TIMER_LASTCALL = null;
 var CALLBACKS = {};
 var CALLBACKS_LASTCALL = {};
 var TIMER = null;
 var STARTTIME = null;
-var fs=require('fs');
 var PHYS_SCALE=game_settings.get('PHYS_SCALE');
 var TILE_SCALE=game_settings.get('TILE_SCALE');
 
@@ -492,7 +494,7 @@ exports.CombatServer=function(type){
     this.games={};
     this.lobbies={};
     this.type=type;
-    this.levels={};
+    this.levels=require('banditracer-client').levels;
 
     this.tickid=1;
 
@@ -526,37 +528,6 @@ exports.CombatServer=function(type){
             console.log(((new Date())+'').substr(0, 25)+msg);
         }
     }
-
-    this.loadLevels=function(){
-        if(this.type=='ringo'){
-
-            var fnames=fs.list(settings.LEVEL_DIRECTORY);
-            var levelname;
-            var fname;
-            var content;
-            for(var i=0;i<fnames.length;i++){
-                fname=fnames[i];
-                levelname=fname.split('.')[0];
-                content=fs.read(fs.join(settings.LEVEL_DIRECTORY, fname), 'r').trim();
-                this.levels[levelname]=JSON.parse(content);
-            }
-        }else if(this.type=='node'){
-            var fnames=fs.readdirSync(settings.LEVEL_DIRECTORY);
-            var levelname;
-            var fname;
-            var content;
-            for(var i=0;i<fnames.length;i++){
-                fname=fnames[i];
-                levelname=fname.split('.')[0];
-                content=fs.readFileSync(settings.LEVEL_DIRECTORY+'/'+fname, 'utf-8');
-                this.levels[levelname]=JSON.parse(content);
-            }
-        }
-
-    };
-
-
-
 
     this.getPlayerByID=function(id){
         for(var uid in this.players){
@@ -824,8 +795,6 @@ exports.CombatServer=function(type){
     this.handle_PROD=function(message, response){
       return null;
     }
-
-    this.loadLevels();
     this.startTimer();
 
 };

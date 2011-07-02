@@ -155,14 +155,14 @@ var Game=exports.Game=function(id, track, leader, server){
         }
 
         if(finished){
-            var table=[];
-            for(var i=0;i<this.finishers.length;i++){
-                table.push({'place':String(i+1),
-                           'id':this.finishers[i].id,
-                           'player':this.finishers[i].alias,
-                           'kills':String(this.finishers[i].car_obj.kills),
-                           'deaths':String(this.finishers[i].car_obj.deaths)});
-            }
+            var table=this.finishers.map(function(finisher, idx) {
+                return {'place': idx+1,
+                       'id': finisher.id,
+                       'player': finisher.alias,
+                       'kills': finisher.car_obj.kills,
+                       'deaths': finisher.car_obj.deaths
+                        };
+            });
 
             this.pushResponse(this.server.newResponse('GAME_OVER', {'table':table}));
             this.server.log('GAME FINISHED '+this.id);
@@ -817,7 +817,7 @@ exports.CombatServer=function(type){
         response.cmd='PONG';
         return response;
     };
-    
+
     /*PROD
     needed only to refresh timeout counter on player
     */

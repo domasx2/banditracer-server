@@ -5,7 +5,7 @@ var log = require('ringo/logging').getLogger(module.id);
 export("app");
 var app = Application();
 app.configure("mount");
-app.mount("/", require("banditracer-client"));
+app.mount("/", require("banditracer-client/webapp"));
 
 var combatserver=require('./combatserver');
 
@@ -39,5 +39,3 @@ var startUp = exports.startUp = function() {
 if (require.main === module) {
     startUp();
 }
-
-

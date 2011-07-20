@@ -104,7 +104,6 @@ var Game=exports.Game=function(id, track, leader, server){
 
         this.time+=msDuration;
 
-
         //timeout game?
         if(this.time>settings.GAME_TIMEOUT){
             this.server.log('GAME TIMEOUT '+this.id);
@@ -132,29 +131,31 @@ var Game=exports.Game=function(id, track, leader, server){
             this.status=GAME_STATUS_RUNNING;
         };
 
-        if(this.status===GAME_STATUS_RUNNING){
-            if(this.time_to_start> -1000){
-                this.time_to_start-=msDuration;
-                if(this.time_to_start<0)this.started=true;
-            }
+      if(this.status===GAME_STATUS_RUNNING){
+         if(this.time_to_start> -1000){
+            this.time_to_start-=msDuration;
+            if(this.time_to_start<0)this.started=true;
+         }
 
-            if(this.started){
-                this.world.b2world.Step(msDuration/1000, 10, 8);
-                this.world.update(msDuration);
-            }
-        }
-        var finished=true;
-        for(uid in this.players){
-            player=this.players[uid];
-            //push player into finishers table if he finished the final lap OR is the last player not to finish
-            if( (player.car_obj.lap>this.max_laps && (!player.finished))||(this.countPlayers()>1 && ((this.countPlayers()-this.finishers.length)==1))){
-                player.finished=true;
-                player.car_obj.teleport([0, 0]);
-                player.car_obj.active=false;
-                this.finishers.push(player);
-            }
-            if(!player.finished)finished=false;
-        }
+         if(this.started){
+             
+            this.world.update(msDuration);
+            this.world.b2world.Step(msDuration/1000, 10, 8);
+            this.world.b2world.ClearForces();
+         }
+      }
+      var finished=true;
+      for(uid in this.players){
+          player=this.players[uid];
+          //push player into finishers table if he finished the final lap OR is the last player not to finish
+          if( (player.car_obj.lap>this.max_laps && (!player.finished))||(this.countPlayers()>1 && ((this.countPlayers()-this.finishers.length)==1))){
+              player.finished=true;
+              player.car_obj.teleport([0, 0]);
+              player.car_obj.active=false;
+              this.finishers.push(player);
+          }
+          if(!player.finished)finished=false;
+      }
 
         if(finished){
             var table=this.finishers.map(function(finisher, idx) {

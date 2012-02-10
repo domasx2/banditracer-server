@@ -580,8 +580,10 @@ exports.CombatServer=function(type){
             if(message.player) message.player.send(response);
             else{
                 response=JSON.stringify(response)
-               // this.log('SENDING'+response);
-                socket.send ? socket.send(response) : socket.write(response);
+                this.log('SENDING'+response);
+                if(socket.send) socket.send(response);
+                else if(socket.write) socket.write(response);
+                else socket.sendUTF(response);
             }
         }
         return null;

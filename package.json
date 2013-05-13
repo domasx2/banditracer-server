@@ -1,8 +1,11 @@
 {
     "name": "banditracer-server",
-    "version": "0.1.0",
-    "description": "Banditracer, dedicated server component of the game",
-    "keywords": ["game", "racing", "websocket"],
-    "author": ["Domas Lapinskas <domasx2@gmail.com>"],
-    "main": "./ringomain.js"
+    "version": "0.2.0",
+    "description": "Dedicated server for Banditracer Client",
+    "author": "Domas Lapinskas <domasx2@gmail.com>",
+    "main": "./main.js",
+    "dependencies": {
+	    "banditracer-client": "git://github.com/domasx2/banditracer-client.git",
+	    "websocket": "*"
+	 }
 }
